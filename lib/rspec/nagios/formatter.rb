@@ -1,21 +1,28 @@
 require 'rspec/nagios'
-require 'rspec/core/formatters/base_formatter'
 
-class RSpec::Nagios::Formatter < RSpec::Core::Formatters::BaseFormatter
+class RSpec::Nagios::Formatter
+  ::RSpec::Core::Formatters.register self, :dump_summary
+
+  attr_reader :output
+  attr_reader :failed_examples
+
   def initialize(output)
-    super(output)
+    @output = output
   end
 
-  def dump_summary(duration, example_count, failure_count, pending_count)
-    super(duration, example_count, failure_count, pending_count)
-    output.puts summary_line(duration, example_count, failure_count, pending_count)
+  def dump_summary(summary)
+    output.puts summary_line(summary)
   end
 
-  def rounding(float, precision)
-    return ((float * 10**precision).round.to_f) / (10**precision)
-  end
+  def summary_line(summary)
+    duration      = summary.duration
+    example_count = summary.examples.count
+    failure_count = summary.failed_examples.count
+    pending_count = summary.pending_examples.count
 
-  def summary_line(duration, example_count, failure_count, pending_count)
+    failed_examples = summary.failed_examples
+
+
     passing_count = example_count - failure_count
     # conformance is expressed as a percentage
     # if example_count is zero we need to avoid div by 0
@@ -54,5 +61,15 @@ class RSpec::Nagios::Formatter < RSpec::Core::Formatters::BaseFormatter
     end
 
     summary
+  end
+
+  private
+
+  def rounding(float, precision)
+    return ((float * 10**precision).round.to_f) / (10**precision)
+  end
+
+  def pluralize(int, str)
+    int.to_s + " " + (int == 1 ? str : str + 's')
   end
 end
